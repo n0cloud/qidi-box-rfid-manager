@@ -1,22 +1,18 @@
 import NfcPromptAndroid from "@/components/NfcPromptAndroid";
 import TagDataCard from "@/components/TagDataCard";
-import { COLORS } from "@/constants/colors";
-import { MATERIALS } from "@/constants/materials";
 import nfcService from "@/services/nfcService";
 import type { TagData } from "@/types";
 import { useEffect, useState } from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
   Appbar,
   Banner,
   Button,
-  Divider,
   Snackbar,
   Text,
   useTheme,
 } from "react-native-paper";
-import RNPickerSelect from "react-native-picker-select";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getNewOutlet, useOutlet } from "reconnect.js";
 
@@ -24,6 +20,14 @@ getNewOutlet(
   "androidPrompt",
   {
     visible: false,
+  },
+  { autoDelete: false }
+);
+
+getNewOutlet(
+  "tagData",
+  {
+    data: null,
   },
   { autoDelete: false }
 );
@@ -38,9 +42,6 @@ export default function HomeScreen() {
   const [nfcSupported, setNfcSupported] = useState(true);
   const [nfcEnabled, setNfcEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [tagData, setTagData] = useState<TagData | null>(null);
-  const [selectedMaterial, setSelectedMaterial] = useState<number | null>(null);
-  const [selectedColor, setSelectedColor] = useState<number | null>(null);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarAction, setSnackbarAction] = useState<
@@ -51,6 +52,11 @@ export default function HomeScreen() {
     | undefined
   >(undefined);
   const [, setAndroidPrompt] = useOutlet<AndroidPromptData>("androidPrompt");
+  const [sharedTagDataState, setSharedTagData] = useOutlet<{
+    data: TagData | null;
+  }>("tagData");
+
+  const tagData = sharedTagDataState?.data || null;
 
   const showSnackbar = (
     message: string,
@@ -90,9 +96,7 @@ export default function HomeScreen() {
       const result = await nfcService.readTag();
 
       if (result.success && result.data) {
-        setTagData(result.data);
-        setSelectedMaterial(result.data.materialCode);
-        setSelectedColor(result.data.colorCode);
+        setSharedTagData({ data: result.data });
         showSnackbar("Tag read successfully!");
       } else {
         showSnackbar(result.error || "Failed to read tag");
@@ -105,97 +109,13 @@ export default function HomeScreen() {
     }
   };
 
-  const handleWrite = async () => {
-    if (!tagData) {
-      showSnackbar("Please scan a tag first before writing");
-      return;
-    }
-
-    if (!nfcEnabled) {
-      return;
-    }
-
-    if (!selectedMaterial || !selectedColor) {
-      showSnackbar("Please select both material and color");
-      return;
-    }
-
-    Alert.alert(
-      "Confirm Write",
-      `Are you sure you want to write the following data to the tag?\n\nMaterial: ${
-        MATERIALS.find((m) => m.code === selectedMaterial)?.name
-      }\nColor: ${COLORS.find((c) => c.code === selectedColor)?.name}`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Write",
-          onPress: async () => {
-            setLoading(true);
-
-            try {
-              setAndroidPrompt({
-                visible: true,
-                message: "Hold your phone near the RFID tag to write...",
-              });
-
-              const result = await nfcService.writeTag(
-                selectedMaterial,
-                selectedColor,
-                1
-              );
-
-              setAndroidPrompt({ visible: false });
-
-              if (result.success) {
-                // Update tag data to reflect what was written
-                const updatedData: TagData = {
-                  ...tagData,
-                  materialCode: selectedMaterial,
-                  colorCode: selectedColor,
-                  materialName:
-                    MATERIALS.find((m) => m.code === selectedMaterial)?.name ||
-                    "Unknown",
-                  colorName:
-                    COLORS.find((c) => c.code === selectedColor)?.name ||
-                    "Unknown",
-                  colorRgb:
-                    COLORS.find((c) => c.code === selectedColor)?.rgb ||
-                    "#000000",
-                };
-                setTagData(updatedData);
-                showSnackbar("Data written to tag successfully!");
-              } else {
-                showSnackbar(result.error || "Failed to write to tag");
-              }
-            } catch (error: any) {
-              setAndroidPrompt({ visible: false });
-              showSnackbar(error.message || "An error occurred while writing");
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const selectedMaterialData = selectedMaterial
-    ? MATERIALS.find((m) => m.code === selectedMaterial)
-    : null;
-  const selectedColorData = selectedColor
-    ? COLORS.find((c) => c.code === selectedColor)
-    : null;
-
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       edges={["top"]}
     >
       <Appbar.Header>
-        <Appbar.Content title="QIDI RFID Manager" />
+        <Appbar.Content title="QIDI RFID Tag Manager" />
       </Appbar.Header>
 
       {!nfcSupported && (
@@ -254,133 +174,11 @@ export default function HomeScreen() {
         </View>
 
         {tagData && (
-          <>
-            <Divider style={styles.divider} />
-
-            <View style={styles.section}>
-              <Text variant="headlineSmall" style={styles.sectionTitle}>
-                Write New Data
-              </Text>
-              <Text variant="bodyMedium" style={styles.instructions}>
-                Select the material and color, then write to the tag.
-              </Text>
-
-              <View style={styles.dropdownContainer}>
-                <Text variant="labelLarge" style={styles.dropdownLabel}>
-                  Material Type
-                </Text>
-                <View
-                  style={[
-                    styles.pickerContainer,
-                    { borderColor: theme.colors.outline },
-                  ]}
-                >
-                  <RNPickerSelect
-                    value={selectedMaterial}
-                    onValueChange={(value) => setSelectedMaterial(value)}
-                    items={MATERIALS.map((material) => ({
-                      label: material.name,
-                      value: material.code,
-                      color: theme.colors.onSurface,
-                    }))}
-                    style={{
-                      inputIOS: {
-                        ...styles.pickerInput,
-                        color: theme.colors.onSurface,
-                      },
-                      inputAndroid: {
-                        ...styles.pickerInput,
-                        color: theme.colors.onSurface,
-                      },
-                      iconContainer: styles.pickerIconContainer,
-                    }}
-                    useNativeAndroidPickerStyle={false}
-                  >
-                    <Text
-                      style={{
-                        color: theme.colors.onSurface,
-                        opacity: selectedMaterialData ? 1 : 0.54,
-                      }}
-                    >
-                      {selectedMaterialData
-                        ? selectedMaterialData.name
-                        : "Select a material..."}
-                    </Text>
-                  </RNPickerSelect>
-                </View>
-              </View>
-
-              <View style={styles.dropdownContainer}>
-                <Text variant="labelLarge" style={styles.dropdownLabel}>
-                  Color
-                </Text>
-                <View
-                  style={[
-                    styles.pickerContainer,
-                    { borderColor: theme.colors.outline },
-                  ]}
-                >
-                  <RNPickerSelect
-                    value={selectedColor}
-                    onValueChange={(value) => setSelectedColor(value)}
-                    items={COLORS.map((color) => ({
-                      label: color.name,
-                      value: color.code,
-                      color: color.rgb,
-                    }))}
-                    style={{
-                      inputIOS: {
-                        ...styles.pickerInput,
-                        color: theme.colors.onSurface,
-                      },
-                      inputAndroid: {
-                        ...styles.pickerInput,
-                        color: theme.colors.onSurface,
-                      },
-                      iconContainer: styles.pickerIconContainer,
-                    }}
-                    useNativeAndroidPickerStyle={false}
-                  >
-                    <Text
-                      style={{
-                        color: theme.colors.onSurface,
-                        opacity: selectedColorData ? 1 : 0.54,
-                        paddingLeft: selectedColorData ? 36 : 0,
-                      }}
-                    >
-                      {selectedColorData
-                        ? selectedColorData.name
-                        : "Select a color..."}
-                    </Text>
-                    {selectedColorData && (
-                      <View style={styles.colorPreviewContainer}>
-                        <View
-                          style={[
-                            styles.colorDot,
-                            {
-                              backgroundColor: selectedColorData.rgb,
-                              borderColor: theme.colors.outline,
-                            },
-                          ]}
-                        />
-                      </View>
-                    )}
-                  </RNPickerSelect>
-                </View>
-              </View>
-
-              <Button
-                mode="contained"
-                onPress={handleWrite}
-                disabled={loading || !nfcEnabled}
-                icon="pencil"
-                style={styles.writeButton}
-                contentStyle={styles.buttonContent}
-              >
-                Write to Tag
-              </Button>
-            </View>
-          </>
+          <View style={styles.section}>
+            <Text variant="bodyMedium" style={styles.instructions}>
+              To write new data to this tag, go to the "Write" tab below.
+            </Text>
+          </View>
         )}
       </ScrollView>
 
@@ -430,51 +228,5 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 16,
-  },
-  divider: {
-    marginVertical: 16,
-  },
-  dropdownContainer: {
-    marginBottom: 16,
-  },
-  dropdownLabel: {
-    marginBottom: 8,
-  },
-  dropdownButton: {
-    justifyContent: "space-between",
-    paddingVertical: 8,
-  },
-  menuScroll: {
-    maxHeight: 300,
-  },
-  pickerContainer: {
-    borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    minHeight: 56,
-    justifyContent: "center",
-    position: "relative",
-  },
-  pickerInput: {
-    fontSize: 16,
-    paddingVertical: 12,
-    paddingRight: 30,
-  },
-  pickerIconContainer: {
-    top: 20,
-    right: 12,
-  },
-  colorPreviewContainer: {
-    position: "absolute",
-    left: 6,
-    top: 0,
-    bottom: 0,
-    justifyContent: "center",
-  },
-  colorDot: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 1,
   },
 });

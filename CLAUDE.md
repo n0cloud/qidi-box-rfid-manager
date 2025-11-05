@@ -54,24 +54,37 @@ The app uses a dual-authentication approach to handle both factory-default and Q
 
 ### State Management Pattern
 
-The app uses `reconnect.js` outlets for cross-component state management, specifically for the Android NFC prompt:
+The app uses `reconnect.js` outlets for cross-component state management:
 
-- **Outlet**: `androidPrompt` outlet controls the NFC scanning UI overlay
-- **Components**: `app/(tabs)/index.tsx` controls the outlet, `components/NfcPromptAndroid.tsx` subscribes to it
-- **Usage**: Set `visible: true` before NFC operations, `visible: false` after completion
+- **`androidPrompt` outlet**: Controls the NFC scanning UI overlay
+  - Set by both tab screens before NFC operations
+  - Consumed by `components/NfcPromptAndroid.tsx` to display the scanning prompt
+  - Usage: Set `visible: true` before NFC operations, `visible: false` after completion
+
+- **`tagData` outlet**: Shares scanned tag data across tabs
+  - Set by Read tab when a tag is scanned
+  - Updated by Write tab after successful write operations
+  - Allows Write tab to access data scanned in Read tab
 
 ### UI Workflow
 
-The main screen (`app/(tabs)/index.tsx`) implements a two-step workflow:
+The app uses a two-tab interface with a sequential workflow:
 
-1. **Read Phase**: User scans a tag to read current data
-   - Populates `tagData` state
-   - Auto-selects material and color in dropdowns based on scanned data
+**Read Tab** (`app/(tabs)/index.tsx`):
+1. User taps "Scan Tag" button
+2. NFC prompt appears, user holds phone near tag
+3. Tag data is read and decoded
+4. Data is stored in shared `tagData` outlet and displayed in a card
+5. User switches to Write tab to modify the tag
 
-2. **Write Phase**: User modifies material/color selections and writes back
-   - Requires confirmation alert before writing
-   - Updates local `tagData` state to reflect written values
-   - Does NOT automatically re-scan (shows optimistic UI update)
+**Write Tab** (`app/(tabs)/write.tsx`):
+1. Displays "No Tag Scanned" message if no data in `tagData` outlet
+2. Once tag is scanned, shows current tag data and two dropdowns
+3. User selects new material and color (both required, validated before write)
+4. User taps "Write to Tag" button
+5. Confirmation alert appears with selected values
+6. Upon confirmation, NFC prompt appears and tag is written
+7. After successful write, `tagData` outlet is updated with new values (optimistic update, no re-scan)
 
 ### Path Aliases
 
@@ -92,7 +105,9 @@ React Native Paper provides theming throughout the app:
 ## Key Files
 
 - `services/nfcService.ts` - NFC read/write operations, authentication, error handling
-- `app/(tabs)/index.tsx` - Main UI screen with scan/write workflow and state management
+- `app/(tabs)/index.tsx` - Read tab: scan tags and display data
+- `app/(tabs)/write.tsx` - Write tab: modify material/color selections and write to tags
+- `app/(tabs)/_layout.tsx` - Tab navigation layout
 - `constants/materials.ts` - 50 material type definitions with lookup functions
 - `constants/colors.ts` - 24 color definitions with RGB values and lookup functions
 - `types/index.ts` - TypeScript interfaces for TagData, NFCReadResult, NFCWriteResult
