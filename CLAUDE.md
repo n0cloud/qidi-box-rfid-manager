@@ -19,19 +19,17 @@ pnpm lint             # Run ESLint
 ```bash
 pnpm android          # Run on Android device/emulator
 pnpm android:build    # Build Android app
-pnpm android:release  # Build Android release APK
-pnpm ios              # Run on iOS device/simulator
-pnpm ios:build        # Build iOS app
+pnpm android:release  # Build Android release APK using EAS Build
 pnpm web              # Run web version
 ```
 
 ### Native Build Management
 ```bash
-pnpm prebuild         # Generate native directories (android/, ios/)
+pnpm prebuild         # Generate native directories (android/)
 pnpm prebuild:clean   # Clean and regenerate native directories
 ```
 
-**Important**: NFC functionality requires a physical Android device with NFC support (Android 12+ / API 31+). iOS also requires a physical device. The emulator/simulator cannot test NFC features.
+**Important**: NFC functionality requires a physical Android device with NFC support (Android 12+ / API 31+). The emulator cannot test NFC features. This app is Android-only.
 
 ## Architecture
 
@@ -134,7 +132,14 @@ Not all codes 1-50 (materials) and 1-24 (colors) are defined - some are marked a
 
 ## Building for Production
 
-The app requires custom native code (react-native-nfc-manager plugin), so it cannot use Expo Go. Use local builds only:
+The app requires custom native code (react-native-nfc-manager plugin), so it cannot use Expo Go. This is an Android-only application.
+
+### Prerequisites
+- EAS CLI installed: `pnpm install -g eas-cli`
+- Expo account and EAS login: `eas login`
+- `eas.json` configuration file with build profiles
+
+### Build Process
 
 1. **Generate native directories** (if not already present):
    ```bash
@@ -144,17 +149,16 @@ The app requires custom native code (react-native-nfc-manager plugin), so it can
 2. **Development Build**:
    ```bash
    pnpm android          # Build and run development build on connected device
-   pnpm ios              # Build and run development build on iOS device
    ```
 
 3. **Production Build**:
    ```bash
-   pnpm android:release  # Build Android release APK (outputs to android/app/build/outputs/apk/release/)
+   pnpm android:release  # Build Android release APK using EAS Build (cloud build)
    ```
 
-   For iOS production builds, open `ios/qidirfid.xcworkspace` in Xcode and archive for distribution.
+   The EAS Build command will build your app in the cloud and provide a download link for the APK.
 
-All builds require a physical device with NFC support to test functionality.
+All builds require a physical Android device with NFC support to test functionality.
 
 ## Reference Documentation
 
