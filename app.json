@@ -2,7 +2,7 @@
   "expo": {
     "name": "qidi-rfid",
     "slug": "qidi-rfid",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "qidirfid",
@@ -25,9 +25,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.nocloud.qidirfid",
-      "permissions": [
-        "android.permission.NFC"
-      ]
+      "permissions": ["android.permission.NFC"]
     },
     "web": {
       "output": "static",
