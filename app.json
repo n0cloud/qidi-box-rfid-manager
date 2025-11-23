@@ -25,7 +25,8 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "app.nocloud.qidirfid",
-      "permissions": ["android.permission.NFC"]
+      "permissions": ["android.permission.NFC"],
+      "excludeFromChromeOS": true
     },
     "web": {
       "output": "static",
