@@ -20,6 +20,7 @@ pnpm lint             # Run ESLint
 pnpm android          # Run on Android device/emulator (local)
 pnpm android:build    # Build Android development build using EAS Build
 pnpm android:release  # Build Android release APK using EAS Build
+pnpm android:build-local  # Build APK locally without EAS (requires JDK and Android SDK)
 pnpm web              # Run web version
 ```
 
@@ -46,7 +47,7 @@ The app uses a dual-authentication approach to handle both factory-default and Q
 3. **Data Format**: 3-byte structure stored in the first 3 bytes of the 16-byte block:
    - Byte 0: Material code (1-50, see `constants/materials.ts`)
    - Byte 1: Color code (1-24, see `constants/colors.ts`)
-   - Byte 2: Manufacturer code (always 1 for QIDI)
+   - Byte 2: Manufacturer code (0-255, see `constants/manufacturer.ts`)
 
 4. **Write Verification**: After writing, the app reads back the block to verify data integrity (`nfcService.ts:115-125`)
 
@@ -104,12 +105,14 @@ React Native Paper provides theming throughout the app:
 
 - `services/nfcService.ts` - NFC read/write operations, authentication, error handling
 - `app/(tabs)/index.tsx` - Read tab: scan tags and display data
-- `app/(tabs)/write.tsx` - Write tab: modify material/color selections and write to tags
+- `app/(tabs)/write.tsx` - Write tab: modify material/color/manufacturer selections and write to tags
 - `app/(tabs)/_layout.tsx` - Tab navigation layout
+- `constants/manufacturer.ts` - 4 manufacturer definitions with lookup functions
 - `constants/materials.ts` - 50 material type definitions with lookup functions
 - `constants/colors.ts` - 24 color definitions with RGB values and lookup functions
 - `types/index.ts` - TypeScript interfaces for TagData, NFCReadResult, NFCWriteResult
-- `components/TagDataCard.tsx` - Displays decoded tag information
+- `components/TagDataCard.tsx` - Displays decoded tag information (Material, Color, Manufacturer)
+- `components/ColorPickerGrid.tsx` - Visual grid picker for selecting colors (24 colors in 4-column grid)
 - `components/NfcPromptAndroid.tsx` - Android NFC scanning overlay (controlled by outlet)
 
 ## Important Constraints

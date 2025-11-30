@@ -8,10 +8,12 @@
     "android": "expo run:android",
     "android:build": "eas build --platform android --profile development",
     "android:release": "eas build --platform android --profile production",
+    "android:build-local": "expo prebuild --clean && cd android && ./gradlew assembleRelease && cd ..",
     "web": "expo start --web",
     "lint": "expo lint",
     "prebuild": "expo prebuild",
-    "prebuild:clean": "expo prebuild --clean"
+    "prebuild:clean": "expo prebuild --clean",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

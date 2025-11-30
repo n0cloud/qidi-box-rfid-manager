@@ -6,9 +6,10 @@ A React Native mobile application for reading and writing RFID tags for QIDI Box
 
 - **Read RFID Tags**: Scan and decode QIDI Box filament RFID tags
 - **Display Tag Information**: View material type, color, manufacturer, and raw data
-- **Write to Tags**: Select material and color from dropdowns and write to tags
+- **Write to Tags**: Select material, color, and manufacturer and write to tags
 - **Material Support**: All 50 QIDI filament types (PLA, ABS, PETG, TPU, PA, etc.)
-- **Color Support**: All 24 color codes with visual previews
+- **Color Support**: All 24 color codes with visual grid picker
+- **Manufacturer Support**: Multiple manufacturer options (QIDI, Generic, Third Party, etc.)
 - **Dark Mode**: Automatic system theme detection
 - **Authentication**: Supports both primary and fallback authentication keys
 
@@ -39,16 +40,19 @@ Currently working on uploading the app to the Google Play Store.
 ## Usage
 
 ### Reading a Tag
-1. Tap "Scan Tag" button
+1. Tap "Scan Tag" button on the Read tab
 2. Hold your phone near the RFID tag
-3. View the decoded tag information
+3. View the decoded tag information (Material, Color, Manufacturer)
 
 ### Writing to a Tag
-1. First, scan a tag to read its current data
-2. Select the desired material type from the dropdown
-3. Select the desired color from the dropdown (with color preview)
-4. Tap "Write to Tag" button
-5. Hold your phone near the RFID tag to write
+1. First, scan a tag to read its current data (Read tab)
+2. Go to the Write tab
+3. Select the desired material type from the dropdown
+4. Select the desired color - a visual grid picker will open with all 24 colors
+5. Select the desired manufacturer
+6. View the current tag data and new selections
+7. Tap "Write to Tag" button
+8. Hold your phone near the RFID tag to write
 
 ## Technologies
 
@@ -61,7 +65,8 @@ Currently working on uploading the app to the Google Play Store.
 ## Build for Production
 
 ```bash
-pnpm android:release
+pnpm android:release  # Build production APK using EAS Build
+pnpm android:build-local  # Build APK locally without EAS (requires JDK and Android SDK)
 ```
 
 ## Development
@@ -74,6 +79,11 @@ pnpm android          # Run on connected device using local build
 ### Development Build (EAS Cloud)
 ```bash
 pnpm android:build    # Build development APK using EAS Build
+```
+
+### Local Build
+```bash
+pnpm android:build-local  # Build APK locally without EAS
 ```
 
 ### Platform-Specific Commands
