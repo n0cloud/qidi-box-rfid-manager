@@ -1,5 +1,5 @@
+import { getManufacturerName } from "@/constants/manufacturer";
 import type { TagData } from "@/types";
-import React from "react";
 import { StyleSheet, View } from "react-native";
 import { Card, Text } from "react-native-paper";
 import ColorPreview from "./ColorPreview";
@@ -36,6 +36,19 @@ export default function TagDataCard({ data }: TagDataCardProps) {
           {data && <ColorPreview color={data.colorRgb} name={data.colorName} />}
         </View>
 
+        <View style={styles.row}>
+          <Text variant="bodyMedium" style={styles.label}>
+            Manufacturer:
+          </Text>
+          <Text variant="bodyMedium" style={styles.value}>
+            {data && (
+              <>
+                {getManufacturerName(data.manufacturerCode)} (Code: {data.manufacturerCode})
+              </>
+            )}
+          </Text>
+        </View>
+
         {/* <View style={styles.row}>
           <Text variant="bodyMedium" style={styles.label}>
             RGB:
@@ -44,15 +57,6 @@ export default function TagDataCard({ data }: TagDataCardProps) {
             {data.colorRgb}
           </Text>
         </View>
-
-				<View style={styles.row}>
-					<Text variant="bodyMedium" style={styles.label}>
-						Manufacturer:
-					</Text>
-					<Text variant="bodyMedium" style={styles.value}>
-						{data.manufacturerCode === 0 ? "Generic" : "QIDI"}
-					</Text>
-				</View>
 
 				 <View style={styles.row}>
           <Text variant="bodyMedium" style={styles.label}>
@@ -78,14 +82,16 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     marginBottom: 12,
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   label: {
-    width: 100,
+    minWidth: 100,
     fontWeight: "600",
+    marginRight: 12,
   },
   value: {
     flex: 1,
+    flexWrap: "wrap",
   },
   mono: {
     fontFamily: "monospace",

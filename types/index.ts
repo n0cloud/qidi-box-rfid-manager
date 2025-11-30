@@ -14,6 +14,11 @@ export interface Material {
   name: string;
 }
 
+export interface Manufacturer {
+  code: number;
+  name: string;
+}
+
 export interface Color {
   code: number;
   name: string;

@@ -125,6 +125,12 @@ class NFCService {
           error: "Color code must be between 1 and 24",
         };
       }
+      if (manufacturerCode < 0 || manufacturerCode > 255) {
+        return {
+          success: false,
+          error: "Manufacturer code must be between 0 and 255",
+        };
+      }
 
       await NfcManager.requestTechnology(NfcTech.MifareClassic);
 

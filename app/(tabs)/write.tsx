@@ -1,10 +1,12 @@
+import ColorPickerGrid from "@/components/ColorPickerGrid";
 import NfcPromptAndroid from "@/components/NfcPromptAndroid";
 import { COLORS } from "@/constants/colors";
+import { getManufacturerName, MANUFACTURERS } from "@/constants/manufacturer";
 import { MATERIALS } from "@/constants/materials";
 import nfcService from "@/services/nfcService";
 import type { TagData } from "@/types";
 import { useEffect, useState } from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Modal, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import {
   Appbar,
   Banner,
@@ -40,6 +42,10 @@ export default function WriteScreen() {
   const [selectedColor, setSelectedColor] = useState<number | null>(
     tagData?.colorCode || null
   );
+  const [selectedManufacturer, setSelectedManufacturer] = useState<number | null>(
+    tagData?.manufacturerCode || 1
+  );
+  const [colorPickerVisible, setColorPickerVisible] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarAction, setSnackbarAction] = useState<
@@ -78,6 +84,7 @@ export default function WriteScreen() {
     if (tagData) {
       setSelectedMaterial(tagData.materialCode);
       setSelectedColor(tagData.colorCode);
+      setSelectedManufacturer(tagData.manufacturerCode);
     }
   }, [tagData]);
 
@@ -93,8 +100,8 @@ export default function WriteScreen() {
       return;
     }
 
-    if (!selectedMaterial || !selectedColor) {
-      showSnackbar("Please select both material and color");
+    if (!selectedMaterial || !selectedColor || selectedManufacturer === null) {
+      showSnackbar("Please select material, color, and manufacturer");
       return;
     }
 
@@ -109,7 +116,7 @@ export default function WriteScreen() {
       const result = await nfcService.writeTag(
         selectedMaterial,
         selectedColor,
-        1
+        selectedManufacturer
       );
 
       setAndroidPrompt({ visible: false });
@@ -120,6 +127,7 @@ export default function WriteScreen() {
           ...tagData,
           materialCode: selectedMaterial,
           colorCode: selectedColor,
+          manufacturerCode: selectedManufacturer,
           materialName:
             MATERIALS.find((m) => m.code === selectedMaterial)?.name ||
             "Unknown",
@@ -233,6 +241,10 @@ export default function WriteScreen() {
                       <Text variant="bodyLarge">{tagData.colorName}</Text>
                     </View>
                   </View>
+                  <View style={styles.dataRow}>
+                    <Text variant="labelLarge">Manufacturer:</Text>
+                    <Text variant="bodyLarge">{getManufacturerName(tagData.manufacturerCode)}</Text>
+                  </View>
                 </Card.Content>
               </Card>
             </View>
@@ -294,6 +306,38 @@ export default function WriteScreen() {
                 <Text variant="labelLarge" style={styles.dropdownLabel}>
                   Color
                 </Text>
+                <TouchableOpacity
+                  onPress={() => setColorPickerVisible(true)}
+                  style={[
+                    styles.pickerContainer,
+                    { borderColor: theme.colors.outline },
+                  ]}
+                >
+                  <View style={styles.colorPickerButtonInner}>
+                    {selectedColorData && (
+                      <View
+                        style={[
+                          styles.colorDot,
+                          {
+                            backgroundColor: selectedColorData.rgb,
+                            borderColor: theme.colors.outline,
+                          },
+                        ]}
+                      />
+                    )}
+                    <Text style={{ marginLeft: 8 }}>
+                      {selectedColorData
+                        ? selectedColorData.name
+                        : "Select a color..."}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.dropdownContainer}>
+                <Text variant="labelLarge" style={styles.dropdownLabel}>
+                  Manufacturer
+                </Text>
                 <View
                   style={[
                     styles.pickerContainer,
@@ -301,12 +345,12 @@ export default function WriteScreen() {
                   ]}
                 >
                   <RNPickerSelect
-                    value={selectedColor}
-                    onValueChange={(value) => setSelectedColor(value)}
-                    items={COLORS.map((color) => ({
-                      label: color.name,
-                      value: color.code,
-                      color: color.rgb,
+                    value={selectedManufacturer}
+                    onValueChange={(value) => setSelectedManufacturer(value)}
+                    items={MANUFACTURERS.map((manufacturer) => ({
+                      label: manufacturer.name,
+                      value: manufacturer.code,
+                      color: theme.colors.onSurface,
                     }))}
                     style={{
                       inputIOS: {
@@ -324,27 +368,15 @@ export default function WriteScreen() {
                     <Text
                       style={{
                         color: theme.colors.onSurface,
-                        opacity: selectedColorData ? 1 : 0.54,
-                        paddingLeft: selectedColorData ? 36 : 0,
+                        opacity: selectedManufacturer !== null ? 1 : 0.54,
                       }}
                     >
-                      {selectedColorData
-                        ? selectedColorData.name
-                        : "Select a color..."}
+                      {selectedManufacturer !== null
+                        ? MANUFACTURERS.find(
+                            (m) => m.code === selectedManufacturer
+                          )?.name
+                        : "Select a manufacturer..."}
                     </Text>
-                    {selectedColorData && (
-                      <View style={styles.colorPreviewContainer}>
-                        <View
-                          style={[
-                            styles.colorDot,
-                            {
-                              backgroundColor: selectedColorData.rgb,
-                              borderColor: theme.colors.outline,
-                            },
-                          ]}
-                        />
-                      </View>
-                    )}
                   </RNPickerSelect>
                 </View>
               </View>
@@ -372,6 +404,38 @@ export default function WriteScreen() {
       >
         {snackbarMessage}
       </Snackbar>
+
+      <Modal
+        visible={colorPickerVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setColorPickerVisible(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+          <View style={styles.modalHeader}>
+            <Text variant="headlineSmall" style={styles.modalTitle}>
+              Select Color
+            </Text>
+            <Button
+              mode="text"
+              onPress={() => setColorPickerVisible(false)}
+              style={styles.modalCloseButton}
+            >
+              Done
+            </Button>
+          </View>
+          <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentInner}>
+            <ColorPickerGrid
+              colors={COLORS}
+              selectedCode={selectedColor}
+              onSelectColor={(code) => {
+                setSelectedColor(code);
+                setColorPickerVisible(false);
+              }}
+            />
+          </ScrollView>
+        </View>
+      </Modal>
 
       <NfcPromptAndroid />
     </SafeAreaView>
@@ -472,5 +536,34 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  colorPickerButtonInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  modalContainer: {
+    flex: 1,
+    marginTop: 50,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  modalTitle: {
+    fontWeight: "bold",
+  },
+  modalCloseButton: {
+    marginRight: -8,
+  },
+  modalContent: {
+    flex: 1,
+  },
+  modalContentInner: {
+    padding: 16,
   },
 });
